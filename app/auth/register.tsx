@@ -1,33 +1,44 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  ActivityIndicator,
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    ActivityIndicator,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../../lib/supabase';
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
-  async function signIn() {
-    if (!email || !password) {
+  async function signUp() {
+    if (!email || !password || !confirmPassword) {
       Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Las contraseñas no coinciden');
+      return;
+    }
+
+    if (password.length < 6) {
+      Alert.alert('Error', 'La contraseña debe tener al menos 6 caracteres');
       return;
     }
 
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signUp({
         email: email.trim(),
         password,
       });
@@ -35,7 +46,11 @@ export default function LoginScreen() {
       if (error) {
         Alert.alert('Error', error.message);
       } else {
-        router.replace('/(tabs)');
+        Alert.alert(
+          '¡Éxito!',
+          'Cuenta creada. Por favor verifica tu email para continuar.',
+          [{ text: 'OK', onPress: () => router.back() }]
+        );
       }
     } catch (error: any) {
       Alert.alert('Error', error.message);
@@ -50,8 +65,16 @@ export default function LoginScreen() {
       style={styles.container}
     >
       <View style={styles.content}>
-        <Text style={styles.title}>🔔 Push App</Text>
-        <Text style={styles.subtitle}>Notificaciones en tiempo real</Text>
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          disabled={loading}
+        >
+          <Text style={styles.backButtonText}>← Volver</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.title}>Crear Cuenta</Text>
+        <Text style={styles.subtitle}>Únete a la comunidad</Text>
 
         <View style={styles.form}>
           <TextInput
@@ -67,7 +90,7 @@ export default function LoginScreen() {
 
           <TextInput
             style={styles.input}
-            placeholder="Password"
+            placeholder="Password (mínimo 6 caracteres)"
             placeholderTextColor="#999"
             value={password}
             onChangeText={setPassword}
@@ -75,26 +98,26 @@ export default function LoginScreen() {
             editable={!loading}
           />
 
+          <TextInput
+            style={styles.input}
+            placeholder="Confirmar Password"
+            placeholderTextColor="#999"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+            editable={!loading}
+          />
+
           <TouchableOpacity
             style={[styles.button, loading && styles.buttonDisabled]}
-            onPress={signIn}
+            onPress={signUp}
             disabled={loading}
           >
             {loading ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.buttonText}>Iniciar Sesión</Text>
+              <Text style={styles.buttonText}>Registrarse</Text>
             )}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={styles.linkButton}
-            onPress={() => router.push('../(auth)/register')}
-            disabled={loading}
-          >
-            <Text style={styles.linkText}>
-              ¿No tienes cuenta? <Text style={styles.linkTextBold}>Regístrate</Text>
-            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -112,8 +135,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
+  backButton: {
+    position: 'absolute',
+    top: 60,
+    left: 20,
+    zIndex: 1,
+  },
+  backButtonText: {
+    fontSize: 16,
+    color: '#007AFF',
+  },
   title: {
-    fontSize: 40,
+    fontSize: 32,
     fontWeight: 'bold',
     textAlign: 'center',
     marginBottom: 10,
@@ -149,18 +182,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: 'bold',
-  },
-  linkButton: {
-    marginTop: 20,
-    alignItems: 'center',
-  },
-  linkText: {
-    color: '#666',
-    fontSize: 14,
-  },
-  linkTextBold: {
-    color: '#007AFF',
     fontWeight: 'bold',
   },
 });
